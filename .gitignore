@@ -1,0 +1,13 @@
+
+__pycache__
+
+.idea*
+/configs/*
+!/configs/example_config
+/configs/example_config/*
+!/configs/example_config/conf.yml
+/data/*
+!/data/sample_preddata.csv
+!/data/sample_traindata.csv
+
+
