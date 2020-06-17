@@ -1,5 +1,3 @@
-
-
 import csv
 import yaml
 
@@ -7,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import tqdm
+
 
 def load_data(args):
     print('### loading data...')
@@ -20,17 +19,19 @@ def load_data(args):
         i = 0
         for row in reader:
             i += 1
-            if i>args.load_lines:
-                    break
-            train.append(row[:idx]+row[idx+1:])
+            if i > args.load_lines:
+                break
+            train.append(row[:idx] + row[idx + 1:])
             label.append(row[idx])
 
     return train, label
+
 
 def load_csv(filepath, sep):
     print("### loading data...")
     delimiters = {'tab': '\t', 'comma': ','}
     return pd.read_csv(filepath, sep=delimiters[sep], dtype='str', engine='python', error_bad_lines=False)
+
 
 def load_csv_test(filepath, sep):
     print("### [TEST MODE] loading data...")
@@ -67,12 +68,12 @@ def pd_load_data(args):
         for row in reader:
             if args.target_column is not None:
                 row[idx] = float(row[idx])
-            if args.load_lines!=-1:
+            if args.load_lines != -1:
                 i += 1
-                if i>args.load_lines:
+                if i > args.load_lines:
                     break
             for ii, ig_idx in enumerate(ignore_idxes):
-                row.remove(row[ig_idx-ii])
+                row.remove(row[ig_idx - ii])
             train.append(row)
 
     pd_data = pd.DataFrame(train, columns=header)
@@ -80,13 +81,15 @@ def pd_load_data(args):
     return pd_data
 
 
-def save_pred_data(correct, outcome, saveinpath, savefilename):
-    submission = pd.DataFrame(columns= ['correct', 'outcome'])
-    if correct is not None:
-        submission['correct'] = correct
+def save_pred_data(X_t, index_columns, outcome, saveinpath, savefilename):
+    if index_columns == '':
+        submission = pd.Series(outcome.reshape(-1))
     else:
-        submission['correct'] = pd.Series(["None"] * len(outcome))
-    submission['outcome'] = outcome
+        submission = pd.DataFrame(columns=index_columns.split(',') + ['outcome'])
+        for idx in index_columns.split(','):
+            submission[idx] = X_t[idx]
+        submission['outcome'] = outcome
+
     if saveinpath[-1] is not '/':
         saveinpath = saveinpath + '/'
     submission.to_csv(saveinpath + savefilename + '.csv', index=False)
@@ -94,7 +97,6 @@ def save_pred_data(correct, outcome, saveinpath, savefilename):
 
 
 def preprocessing_train_data(pd_data, configs):
-
     target_column = configs['target_column']['name']
     columns_be_used = [target_column]
     for origin_column in configs['train_columns']:
@@ -123,21 +125,22 @@ def preprocessing_train_data(pd_data, configs):
     charas_num_n = len(charas)
     dict_cahras_idx = dict(zip(charas, range(charas_num_n)))
 
-    input_max_nums = {} # 削除したい
+    input_max_nums = {}  # 削除したい
     label_encoder_config = {'encoder_dict': {}}
 
     for origin_column in tqdm.tqdm(configs['train_columns']):
         column_encode_hist = {}
         if origin_column['encoder_type'] == "date":
             df_date = pd_data[origin_column['name']].str.split('-', expand=True)
-            tmp_year = origin_column['name']+'_year'
-            tmp_month = origin_column['name']+'_month'
-            tmp_day = origin_column['name']+'_day'
+            tmp_year = origin_column['name'] + '_year'
+            tmp_month = origin_column['name'] + '_month'
+            tmp_day = origin_column['name'] + '_day'
             df_date = df_date.rename(
                 columns={0: tmp_year, 1: tmp_month, 2: tmp_day})
             pd_data = pd.concat([df_date, pd_data], axis=1)
             del df_date
-            pd_data[tmp_year] = pd_data[tmp_year].fillna('2000').str.replace('nan', '2000').replace('', '2000').astype(int) - 2000
+            pd_data[tmp_year] = pd_data[tmp_year].fillna('2000').str.replace('nan', '2000').replace('', '2000').astype(
+                int) - 2000
             pd_data[tmp_year][pd_data[tmp_year] < 0] = 0
             pd_data[tmp_year][pd_data[tmp_year] > 30] = 30
             input_max_nums[tmp_year] = 30
@@ -173,9 +176,9 @@ def preprocessing_train_data(pd_data, configs):
 
         elif origin_column['encoder_type'] == "text_encoder":
             for si in range(origin_column['max_length']):
-                pd_data[origin_column['name']+str(si)] = \
+                pd_data[origin_column['name'] + str(si)] = \
                     [dict_cahras_idx[x] for x in pd_data[origin_column['name']].str[si].fillna('nan').values.tolist()]
-                input_max_nums[origin_column['name']+str(si)] = charas_num_n + 1
+                input_max_nums[origin_column['name'] + str(si)] = charas_num_n + 1
             column_encode_hist['mapping'] = "text_encoded"
             del pd_data[origin_column['name']]
 
@@ -195,7 +198,6 @@ def preprocessing_train_data(pd_data, configs):
 
 
 def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False):
-
     target_column = configs['target_column']['name']
     columns_be_used = [target_column]
     for origin_column in configs['train_columns']:
@@ -221,14 +223,16 @@ def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False
         try:
             if origin_column['encoder_type'] == "date":
                 df_date = pd_data[origin_column['name']].str.split('-', expand=True)
-                tmp_year = origin_column['name']+'_year'
-                tmp_month = origin_column['name']+'_month'
-                tmp_day = origin_column['name']+'_day'
+                tmp_year = origin_column['name'] + '_year'
+                tmp_month = origin_column['name'] + '_month'
+                tmp_day = origin_column['name'] + '_day'
                 df_date = df_date.rename(
                     columns={0: tmp_year, 1: tmp_month, 2: tmp_day})
                 pd_data = pd.concat([df_date, pd_data], axis=1)
                 del df_date
-                pd_data[tmp_year] = pd_data[tmp_year].fillna('2000').str.replace('nan', '2000').replace('','2000').astype(int) - 2000
+                pd_data[tmp_year] = pd_data[tmp_year].fillna('2000').str.replace('nan', '2000').replace('',
+                                                                                                        '2000').astype(
+                    int) - 2000
                 pd_data[tmp_year][pd_data[tmp_year] < 0] = 0
                 pd_data[tmp_year][pd_data[tmp_year] > 30] = 30
                 pd_data[tmp_month] = pd_data[tmp_month].fillna(0).astype(int)
@@ -239,7 +243,8 @@ def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False
                 origin_values = pd_data[origin_column['name']].values.tolist()
                 col_encoder_map = encoder_map['encoder_dict'][origin_column['name']]['mapping']
                 pd_data[origin_column['name']] = [col_encoder_map[x]
-                                                  if x in col_encoder_map else col_encoder_map['nan'] for x in origin_values]
+                                                  if x in col_encoder_map else col_encoder_map['nan'] for x in
+                                                  origin_values]
                 del origin_values
 
             elif origin_column['encoder_type'] == "as_label":
@@ -250,14 +255,14 @@ def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False
                 # tmp_data = pd_data[origin_column['name']].fillna('0.0').str.replace('nan', '0.0').astype(float)
                 label_max = int(encoder_map['encoder_dict'][origin_column['name']]['max'])
                 tmp_data = (tmp_data * float(origin_column['coeff'])).fillna(0).astype(int)
-                tmp_data[tmp_data >= label_max] = label_max-1
+                tmp_data[tmp_data >= label_max] = label_max - 1
                 pd_data[origin_column['name']] = tmp_data
                 del tmp_data
 
             elif origin_column['encoder_type'] == "text_encoder":
                 col_encoder_map = encoder_map['text_encoded']
                 for si in range(origin_column['max_length']):
-                    pd_data[origin_column['name']+str(si)] = \
+                    pd_data[origin_column['name'] + str(si)] = \
                         [col_encoder_map[x] if x in col_encoder_map else col_encoder_map['nan']
                          for x in pd_data[origin_column['name']].str[si].fillna('nan').values.tolist()]
                 del col_encoder_map
@@ -266,9 +271,9 @@ def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False
         except Exception as e:
             # なぞにカラムが無いときもしくは最適化するために無いときは適当な値いれちゃう
             if origin_column['encoder_type'] == "date":
-                tmp_year = origin_column['name']+'_year'
-                tmp_month = origin_column['name']+'_month'
-                tmp_day = origin_column['name']+'_day'
+                tmp_year = origin_column['name'] + '_year'
+                tmp_month = origin_column['name'] + '_month'
+                tmp_day = origin_column['name'] + '_day'
                 pd_data[tmp_year][pd_data[tmp_year] > 30] = 20
                 pd_data[tmp_month] = 1
                 pd_data[tmp_day] = 1
@@ -280,7 +285,7 @@ def preprocessing_pred_data(pd_data, configs, conf_d, ignore_target_column=False
             elif origin_column['encoder_type'] == "text_encoder":
                 col_encoder_map = encoder_map['text_encoded']
                 for si in range(origin_column['max_length']):
-                    pd_data[origin_column['name']+str(si)] = col_encoder_map['nan']
+                    pd_data[origin_column['name'] + str(si)] = col_encoder_map['nan']
 
     return pd_data
 

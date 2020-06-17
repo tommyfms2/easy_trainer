@@ -47,7 +47,7 @@ def main(args):
     y = train[target_column].astype(float).values
     y_t = test[target_column].astype(float).values
     del train
-    del test
+    # del test
 
     seed = 1
     np.random.seed(1)
@@ -106,10 +106,10 @@ def main(args):
     print('saving weights')
     model.save_weights(os.path.join(output_d, 'model_weights.hdf5'))
 
-    X_t = [X_t[:, i] for i in range(X_t.shape[1])]
-    outcome = model.predict(X_t, batch_size=8192)
+    X_t_reshaped = [X_t[:, i] for i in range(X_t.shape[1])]
+    outcome = model.predict(X_t_reshaped, batch_size=8192)
 
-    data_utils.save_pred_data(y_t, outcome, output_d, 'train_test_results')
+    data_utils.save_pred_data(test, target_column, outcome, output_d, "train_results")
 
 
 if __name__ == "__main__":

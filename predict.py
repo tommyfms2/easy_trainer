@@ -38,10 +38,10 @@ def main(args):
     else:
         model.load_weights(args.weight)
 
-    X_t = [X_t[:, i] for i in range(X_t.shape[1])]
-    outcome = model.predict(X_t, batch_size=1024 * 8)
+    X_t_reshaped = [X_t[:, i] for i in range(X_t.shape[1])]
+    outcome = model.predict(X_t_reshaped, batch_size=1024 * 8)
 
-    data_utils.save_pred_data(y_t, outcome, conf_d, 'pred_results')
+    data_utils.save_pred_data(pd_data, args.index_columns, outcome, conf_d, args.results)
 
 
 if __name__ == "__main__":
@@ -49,6 +49,8 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input', required=True)
     parser.add_argument('-c', '--config', required=True)
     parser.add_argument('-w', '--weight', default='model_weights.hdf5')
+    parser.add_argument('-ic', '--index_columns', default='')
+    parser.add_argument('-r', '--results', default='pred_results')
     parser.add_argument('--test', action='store_true')
     args = parser.parse_args()
     main(args)
