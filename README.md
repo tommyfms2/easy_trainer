@@ -1,4 +1,4 @@
-# scope-coupon-optimizer
+# easy trainer
 
 
 ### 手順
@@ -54,7 +54,7 @@ configs配下に指定したconfig_nameが生成され，その配下にconf.yml
 encoder_typeについて  
 
 |encoder_type|Required Config|Desc|
-|:--|:--|:--|:--|
+|:--|:--|:--|
 |label_encoder|なし|入力値が一対一に変換され，入力に用いられる．入力値自体の文字列に意味がないときに使用．例）暗号化されたユーザ名，カテゴリID|
 |text_encoder|max_length|入力値自体に意味があるときに使用．max_lengthで最大文字列数を指定する．例）タイトル|
 |as_label|coeff|整数の入力で，それ自体に意味があるときに用いる．例）価格，レビュー得点|
@@ -79,8 +79,8 @@ encoder_typeについて
 	
 
 |Abbreviation|Parameter|Requirement|Desc|ex|
-|:--|:--|:--|:--|:--|:--|
-|-c|--config|O|設定した conf.ymlを指定| ./configs/sample_config/conf.yml
+|:--|:--|:--|:--|:--|
+|-c|--config|O|設定した conf.ymlを指定| ./configs/sample_config/conf.yml|
 ||--test|X|指定すると最初の1000行のみを使って学習する| --test|
 
 
